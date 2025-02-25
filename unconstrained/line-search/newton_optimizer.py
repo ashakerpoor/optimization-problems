@@ -40,6 +40,21 @@ def newton(f, variable_list, iterations, init_point=[]):
     return xT
 
 
+def line_search(f_numeric, rho, c, grad, x_k, step_direction, alpha=1.0):
+    f_k = f_numeric(*x_k)
+    
+    while True:
+        x_k1 = x_k + alpha * step_direction
+        f_k1 = f_numeric(*x_k1)
+        
+        # Armijo condition
+        if f_k1 <= f_k + c * alpha * np.dot(grad, step_direction):
+            break
+        
+        # Reduce step size
+        alpha *= rho
+
+    return alpha
 
 
 def rosenbrock(x, y):   # Rosenbrock function
@@ -74,12 +89,14 @@ def hessian(f, variable_list):
     return derivatives_matrix
 
 
+
 if __name__ == "__main__":
     x1,x2 = sp.symbols("x1 x2")
     variables = [x1, x2]
+    init_point=[1.2, 1.2]
+    # init_point=[-1.2,1.0]
+    iterations = 1000000
 
-    f = rosenbrock(x1, x2)
-    grad = gradient(f, variables)
-    hess = hessian(f, variables)
-
-    print(f"Gradient: {grad}\nHessian: {hess}")
+    f_rosenbrock = rosenbrock(x1, x2)
+    optimal_point = newton(f_rosenbrock, variables, iterations, init_point)
+    print("Optimal point:", optimal_point)
