@@ -85,7 +85,29 @@ def reduction_ratio(f, x_k, g_k, B_k, p):
     return (f_k - f_k1) / (m_k0 - m_kp) if (m_k0 - m_kp) != 0 else 1.0
 
     
+def step_direction(g_k, B_k, radius):
+    """Compute trust region step using the dogleg method."""
+    
+    # Cauchy step
+    pU = - (np.dot(g_k, g_k) / np.dot(g_k, np.dot(B_k, g_k))) * g_k   
+    # full Newton step
+    pB = -np.linalg.solve(B_k, g_k)
 
+    if np.linalg.norm(pB) <= radius and is_pd(B_k):
+        return pB
+    elif np.linalg.norm(pU) >= radius:
+        # return (radius / np.linalg.norm(pU)) * pU
+        return -radius * (g_k / np.linalg.norm(g_k))
+    else:
+        dp = pB - pU
+        a = np.dot(dp, dp)
+        b = 2 * np.dot(pU, dp)
+        c = np.dot(pU, pU) - radius**2
+        
+        # Solution to ||pU + (tau-1)(pB-pU)||^2 = Delta^2
+        # This is tau - 1
+        tau = (-b + np.sqrt(b**2 - 4*a*c)) / (2*a)
+        return pU + tau * dp
 
 
 def rosenbrock(x, y):   # Rosenbrock function
@@ -120,3 +142,26 @@ def hessian(f, variable_list):
             derivatives_matrix[i, j] = sp.lambdify(variable_list, second_deriv, 'numpy')
 
     return derivatives_matrix
+    
+    
+# Check for positive definiteness
+def is_pd(B_k):
+    try:
+        np.linalg.cholesky(B_k)
+        return True
+    except np.linalg.LinAlgError:
+        return False
+        
+        
+if __name__ == "__main__":
+    x1,x2 = sp.symbols("x1 x2")
+    variables = [x1, x2]
+    # init_point=[1.2, 1.2]
+    init_point=[-1.2,1.0]
+    # iterations = 1000000
+    iterations = 100
+    radius_bound = 2.
+
+    f_rosenbrock = rosenbrock(x1, x2)
+    minimizer = tr(f_rosenbrock, variables, radius_bound, iterations, init_point)
+    print("Minimizer point:", minimizer)
