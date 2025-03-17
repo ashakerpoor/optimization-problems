@@ -51,7 +51,38 @@ def tr(f, variables, radius_bound, iterations, init_point=[]):
     return xT
 
 
+def cost_function(f_k, g_k, B_k, p):
+    """
+    Quadratic approximation of the function at x_k.
 
+    Parameters:
+    f_k: function value at x_k
+    g: evaluated gradient at x_k
+    B: evaluated Hessian at x_k
+    p: step direction
+    """
+    return f_k + np.dot(g_k, p) + 0.5 * np.dot(p, np.dot(B_k, p))
+
+
+def reduction_ratio(f, x_k, g_k, B_k, p):
+    """
+    Parameters:
+    variables: array of the function's f variables
+    x_k: current point
+    g_k: evaluated gradient at xk
+    B_k: evaluated hessian at xk
+    p: step direction
+    """
+
+    x_k1 = x_k + p
+    f_k = f(*x_k) # Evaluate f at x_k
+    f_k1 = f(*x_k1) # Evaluate f at x_k + p
+
+    n = len(p)
+    m_k0 = cost_function(0, g_k, B_k, np.zeros(n))  # Model at p=0
+    m_kp = cost_function(0, g_k, B_k, p)    # Model at p=p_k
+
+    return (f_k - f_k1) / (m_k0 - m_kp) if (m_k0 - m_kp) != 0 else 1.0
 
     
 
